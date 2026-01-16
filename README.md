@@ -11,10 +11,10 @@ It is worth mentioning that the primary goal of this project is to demonstrate t
 ## Data Description
 The data used for this project is the SECOM dataset, which is provided on the following page: https://doi.org/10.24432/C54305
 
-The dataset contains 1567 sets of measurements with 591 features (i.e. measured signals). Out of the 1567 measurements, the test outcome is a fail in 104 cases.
+The dataset contains 1567 sets of measurements with 590 features (i.e. measured signals). Out of the 1567 measurements, the test outcome is a fail in 104 cases.
 
 The data provided on the page indicated above consists of a zip file that contains 3 files:
-- secom.data: contains the selection of measured data (1567 rows and 591 columns).
+- secom.data: contains the selection of measured data (1567 rows and 590 columns).
 - secom.names: includes information regarding the dataset.
 - secom_labels.data: contains the labels that represent the outcome of the line testing for each measurement (–1 corresponds to a pass and 1 corresponds to a fail), along with a datetimestamp.
 
