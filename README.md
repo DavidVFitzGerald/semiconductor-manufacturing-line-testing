@@ -15,7 +15,8 @@ It is worth mentioning that the primary goal of this project is to demonstrate t
 
 ## Data Description
 The data used for this project is the SECOM dataset, which is provided on the following page: https://doi.org/10.24432/C54305
-Note: a function has been implemented to automatically download and extract the data before the models are trained.
+
+Note: a function has been implemented to automatically download and extract the data before the data is loaded.
 
 The dataset contains 1567 sets of measurements with 590 features (i.e. measured signals). Out of the 1567 measurements, the test outcome is a fail in 104 cases.
 
@@ -24,16 +25,16 @@ The data provided at the URL indicated above consists of a zip file that contain
 - secom.names: includes information regarding the dataset.
 - secom_labels.data: contains the labels that represent the outcome of the line testing for each measurement (–1 corresponds to a pass and 1 corresponds to a fail), along with a datetimestamp.
 
-## Data Analysis & Preprocessing
+## Data Analysis and Preprocessing
 The main points uncovered during the data analysis (performed in ```notebook.ipynb```) are the following:
 - All columns in the dataset containing the features are numerical
 - Some columns have quite a lot of missing values: for 28 columns, more than 50% of the values are missing. These columns are dropped during preprocessing.
 - 116 columns contain constant values. They are removed during preprocessing, since they do not add any predictive information.
 - A lot of features are highly correlated (> 0.9). For each pair of highly correlated feature, the one with lowest variance is dropped during preprocessing.
 - There are no missing values in the labels.
-- The labels indicate that 1463 of the measurements correspond to a test pass (value of -1),while 104 correspond to test fail (value of 1), which is equivalent to 6.6% of test fails.
+- The labels indicate that 1463 of the measurements correspond to a test pass (value of -1), while 104 correspond to test fail (value of 1), which is equivalent to 6.6% of test fails.
 
-Given the relatively high number of features, no attempt was made to visually analyse them.
+Given the relatively high number of features, no attempt was made to visualise them.
 
 For applying the preprocessing steps, a transformer object is defined for each preprocessing step. In addition to the preprocessing steps described above, any missing value is imputed with the median of its column.
 
@@ -41,33 +42,52 @@ The resulting transformer objects are combined into a preprocessing pipeline.
 
 ## Model Training and Selection
 5 types of binary classifiers were trained and evaluated:
-1. logistic regression
-2. ridge classifier
-3. decision tree classifier
-4. random forest classifier
+1. Logistic regression
+2. Ridge classifier
+3. Decision tree classifier
+4. Random forest classifier
 5. XGBoost classifier
 
 A grid search was performed to find the best combination of parameter values for each model. The PR-AUC (a.k.a. average precision) was used for selecting the best set of parameters for each model.
 
 Since the number of measurements is relatively low for the number of features, cross-validation was implemented using 5 splits.
 
-As the target labels are imbalanced, a search was performed to determine the optimal decision threshold value for classifying whether a given probability should correspond to a pass or a fail. The optimal threshold was determined based on the F1-score computed on the validation data, by identifiyng the threshold that provided the highest F1-score.
+As the target labels are imbalanced, a search was performed to determine the optimal decision threshold value for classifying whether a given probability should correspond to a pass or a fail. The optimal threshold was determined based on the F1-score computed on the validation data, by identifying the threshold that provided the highest F1-score.
 
 Based on the PR-AUC and ROC-AUC values obtained both on the training and validation data, as well as the F1-score, the **random forest classifier** was found to be overall the best performing model, given the ranges of parameters tested.
 
-The random forest classifier was subsequently refitted using the training and validation data, using the best parameter values found during the training stage. The optimal threshold was searched for again, and identified to be 0.28.
+The random forest classifier was subsequently refitted using the training and validation data, using the best parameter values found during the training stage. The optimal threshold was searched for again and identified to be 0.28.
 
 The code for training the random forest classifier using the best parameter values found was transferred to the ```train.py``` and ```preprocessing.py``` scripts.
 
 Refer to the ```notebook.ipynb``` for more details regarding the training and evaluation of the models.
 
-## Model Deployment
-The Docker image was deployed as a Lambda function on AWS. To avoid any unwanted costs due to abuse, the function is not exposed publicly.
+## Dockerization and Model Deployment
+A Dockerfile was setup for this project to make the ```predict.py``` script available as a Lambda function on AWS. To avoid any unwanted costs due to potential abuse, the function is not exposed publicly.
+
+The Docker image was built by running the following command:
+```bash
+    docker build -t secom-test-prediction .
+```
+
+An Elastic Container Repository (ECR) was created on AWS using the following command:
+```bash
+aws ecr create-repository \
+  --repository-name "secom-test-prediction" \
+  --region "ap-southeast-2"
+```
+
+The Docker image was then pushed to the repository by running the ```publish.sh``` script:
+```bash
+bash publish.sh
+```
+
+The Lambda function was created manually through the AWS cloud console.
 
 The following screenshot shows the deployed function:
 ![lambda_function](images/lambda_function.png)
 
-The function was tested succesfully using the sensor data contained in ```test_sensor_data.json```:
+The function was tested successfully using the sensor data contained in ```test_sensor_data.json```:
 ![lambda_function_test](images/lambda_function_test.png)
 
 ## How to Test the Model Locally
@@ -79,7 +99,7 @@ The image has been made available on Docker Hub for a limited time (it might no 
     docker manifest inspect davidvfitzgerald/secom-test-prediction:prod
     ```
 
-    If information is returned, this means the image is still online and can be used. If the message "no such manifest" is returned, then the image is no longer online and you will need to use the [other option](#option-2-clone-the-repository-and-build-docker-image) to run the service locally.
+    If information is returned, this means the image is still online and can be used. If the message "no such manifest" is returned, then the image is no longer online, and you will need to use the [other option](#option-2-clone-the-repository-and-build-docker-image) to run the service locally.
 
 2. If the image is available, run the following commands to download the image and run it:
     ```
@@ -125,8 +145,23 @@ The image has been made available on Docker Hub for a limited time (it might no 
     {'predicted proba': 0.29476542430852964, 'predicted test outcome': 'fail'}
     ```
 
+## How to Install Dependencies and Run Notebook
+Dependencies in this project are managed with uv.
+
+In case you want to run the code locally, first ensure that uv is installed on the machine where you want to run the code.
+
+To setup the environment, run the following command:
+```
+uv sync
+```
+
+In case you want to execute the code in the jupyter notebook, run the following command to open it in a browser window:
+```
+uv run --with jupyter jupyter lab
+```
+
 ## Note Regarding the Use of AI
-Some of the code in this project was written with the assistance of AI through VS Code Copilot, with review by a Human (me). The rest of work involved in this project, such as problem selection, design decisions, package and tool selection, and writing of the README, was implemented by a Human (me).
+Some of the code in this project was written by AI or with the assistance of AI, with review by a Human (me). The rest of work involved in this project, such as problem selection, design decisions, package and tool selection, and writing of the README, was implemented by a Human (me).
 
 ## References
 McCann, M. & Johnston, A. (2008). SECOM [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C54305.
