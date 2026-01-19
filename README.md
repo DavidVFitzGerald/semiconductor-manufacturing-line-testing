@@ -3,10 +3,13 @@
 This project was created to be submitted as Capstone Project for the [Machine Learning Zoomcamp](https://github.com/DataTalksClub/machine-learning-zoomcamp) (2025 cohort).
 
 ## Problem Description
-Production lines in manufacturing facilities make use of monitoring systems to detect potential issues and failures as early as possible so that they can be fixed as quickly as possible. Such monitoring systems typically use numerous sensors to monitor the different production steps. This usually results in large amounts of sensor data being collected. It then becomes a challenge to understand which sensor signals within the collected data are the most useful for identifying potential issues in the production line that require human intervention. This is where machine learning algorithms can help identify the most relevant sensor signals, as well as help build models that accurately identify when issues that require fixing occur.
+Production lines in manufacturing facilities make use of monitoring systems to detect potential issues and failures as early as possible so that they can be fixed as quickly as possible. Such monitoring systems typically use numerous sensors to monitor the different production steps. This usually results in large amounts of sensor data being collected. 
+
+It then becomes a challenge to understand which sensor signals within the collected data are the most useful for identifying potential issues in the production line that require human intervention. This is where machine learning algorithms can help identify the most relevant sensor signals, as well as help build models that accurately identify when issues that require fixing occur.
 
 ## Project Goal
 This project analyses real monitoring data collected from a semiconductor production line. The goal is to identify which are the most relevant signals within the many measured sensor signals, and based on those signals, train a machine learning model that accurately predicts the pass or fail of production line tests.
+
 It is worth mentioning that the primary goal of this project is to demonstrate the steps involved in training and deploying a machine learning model, not to obtain the best performing model.
 
 ## Data Description
@@ -24,11 +27,16 @@ The data provided on the page indicated above consists of a zip file that contai
 ## Model Training and Selection
 
 ## Model Deployment
+The Docker image was deployed as a Lambda function on AWS. To avoid any unwanted costs due to abuse, the function is not exposed publicly.
 
-## How to use Deployed Lambda Function
+The following screenshot shows the deployed function:
+![lambda_function](images/lambda_function.png)
+
+The function was tested succesfully using the sensor data contained in test_sensor_data.json:
+![lambda_function_test](images/lambda_function_test.png)
 
 ## How to Test the Model Locally
-### Option 1: download the image from Docker Hub (if available)
+### Option 1: Download the Image from Docker Hub (if Available)
 The image has been made available on Docker Hub for a limited time (it might no longer be available when you read this). To be able to use it, you need to have Docker installed on the machine you want to run the image on, and you need an account that allows you to access Docker Hub.
 
 1. First check if the image is still available:
