@@ -1,4 +1,5 @@
 ![ic_board](images/ic_board.jpg)
+# Semiconductor Manufacturing Line Test Prediction Model
 ## Purpose
 This project was created to be submitted as Capstone Project for the [Machine Learning Zoomcamp](https://github.com/DataTalksClub/machine-learning-zoomcamp) (2025 cohort).
 
@@ -14,17 +15,51 @@ It is worth mentioning that the primary goal of this project is to demonstrate t
 
 ## Data Description
 The data used for this project is the SECOM dataset, which is provided on the following page: https://doi.org/10.24432/C54305
+Note: a function has been implemented to automatically download and extract the data before the models are trained.
 
 The dataset contains 1567 sets of measurements with 590 features (i.e. measured signals). Out of the 1567 measurements, the test outcome is a fail in 104 cases.
 
-The data provided on the page indicated above consists of a zip file that contains 3 files:
+The data provided at the URL indicated above consists of a zip file that contains 3 files:
 - secom.data: contains the selection of measured data (1567 rows and 590 columns).
 - secom.names: includes information regarding the dataset.
 - secom_labels.data: contains the labels that represent the outcome of the line testing for each measurement (–1 corresponds to a pass and 1 corresponds to a fail), along with a datetimestamp.
 
-## Data Analysis and Preprocessing
+## Data Analysis & Preprocessing
+The main points uncovered during the data analysis (performed in ```notebook.ipynb```) are the following:
+- All columns in the dataset containing the features are numerical
+- Some columns have quite a lot of missing values: for 28 columns, more than 50% of the values are missing. These columns are dropped during preprocessing.
+- 116 columns contain constant values. They are removed during preprocessing, since they do not add any predictive information.
+- A lot of features are highly correlated (> 0.9). For each pair of highly correlated feature, the one with lowest variance is dropped during preprocessing.
+- There are no missing values in the labels.
+- The labels indicate that 1463 of the measurements correspond to a test pass (value of -1),while 104 correspond to test fail (value of 1), which is equivalent to 6.6% of test fails.
+
+Given the relatively high number of features, no attempt was made to visually analyse them.
+
+For applying the preprocessing steps, a transformer object is defined for each preprocessing step. In addition to the preprocessing steps described above, any missing value is imputed with the median of its column.
+
+The resulting transformer objects are combined into a preprocessing pipeline.
 
 ## Model Training and Selection
+5 types of binary classifiers were trained and evaluated:
+1. logistic regression
+2. ridge classifier
+3. decision tree classifier
+4. random forest classifier
+5. XGBoost classifier
+
+A grid search was performed to find the best combination of parameter values for each model. The PR-AUC (a.k.a. average precision) was used for selecting the best set of parameters for each model.
+
+Since the number of measurements is relatively low for the number of features, cross-validation was implemented using 5 splits.
+
+As the target labels are imbalanced, a search was performed to determine the optimal decision threshold value for classifying whether a given probability should correspond to a pass or a fail. The optimal threshold was determined based on the F1-score computed on the validation data, by identifiyng the threshold that provided the highest F1-score.
+
+Based on the PR-AUC and ROC-AUC values obtained both on the training and validation data, as well as the F1-score, the **random forest classifier** was found to be overall the best performing model, given the ranges of parameters tested.
+
+The random forest classifier was subsequently refitted using the training and validation data, using the best parameter values found during the training stage. The optimal threshold was searched for again, and identified to be 0.28.
+
+The code for training the random forest classifier using the best parameter values found was transferred to the ```train.py``` and ```preprocessing.py``` scripts.
+
+Refer to the ```notebook.ipynb``` for more details regarding the training and evaluation of the models.
 
 ## Model Deployment
 The Docker image was deployed as a Lambda function on AWS. To avoid any unwanted costs due to abuse, the function is not exposed publicly.
@@ -32,7 +67,7 @@ The Docker image was deployed as a Lambda function on AWS. To avoid any unwanted
 The following screenshot shows the deployed function:
 ![lambda_function](images/lambda_function.png)
 
-The function was tested succesfully using the sensor data contained in test_sensor_data.json:
+The function was tested succesfully using the sensor data contained in ```test_sensor_data.json```:
 ![lambda_function_test](images/lambda_function_test.png)
 
 ## How to Test the Model Locally
@@ -65,12 +100,12 @@ The image has been made available on Docker Hub for a limited time (it might no 
     ```
     You should see the following information be printed out in the terminal:
     ```
-    {"predicted proba": 0.29476542430852964, "predicted test outcome": "fail"}(semiconductor-manufacturing-line-testing)
+    {'predicted proba': 0.29476542430852964, 'predicted test outcome': 'fail'}
     ```
 
 ### Option 2: Clone the Repository and Build Docker Image
 
-1. After you have cloned the repository, build the Docker image with the following command:
+1. Clone this repository, then build the Docker image with the following command:
     ```bash
     docker build -t secom-test-prediction .
     ```
@@ -80,12 +115,12 @@ The image has been made available on Docker Hub for a limited time (it might no 
     docker run -it --rm -p 8080:8080 secom-test-prediction
     ```
 
-3. Test it by running:
+3. Test it by running the ```test.py``` script:
     ```bash
-    python test.py
+    uv run python test.py
     ```
 
-    You should see the following information printed out in the terminal:
+    You should see the following information be printed out in the terminal:
     ```bash
     {'predicted proba': 0.29476542430852964, 'predicted test outcome': 'fail'}
     ```
